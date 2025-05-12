@@ -1,0 +1,61 @@
+dataset:
+  name: Lorenz_Official
+  pair_id:
+  - 7
+hyperparameters:
+  dropout:
+    choices:
+    - 0.0
+    - 0.25
+    type: choice
+  horizon:
+    lower_bound: 10
+    type: randint
+    upper_bound: 45
+  kernel_dim:
+    choices:
+    - 32
+    - 64
+    - 128
+    type: choice
+  lag:
+    lower_bound: 10
+    type: randint
+    upper_bound: 45
+  lr:
+    lower_bound: 1.0e-05
+    type: loguniform
+    upper_bound: 0.01
+  n_blocks:
+    choices:
+    - 3
+    - 4
+    - 5
+    - 6
+    type: choice
+  weight_decay:
+    choices:
+    - 0
+    - 0.0001
+    type: choice
+model:
+  batch_size: 5
+  criterion_weights:
+  - 1
+  - 1
+  - 1
+  data_transform: mean
+  decoder_config: decoder/default
+  early_stopping_epochs: 10
+  embedding_config: embedding/repeat
+  encoder_config: encoder/default_no_skip
+  loss: informer_rmse
+  max_epochs: 50
+  mlp_n_layers: 1
+  name: spacetime
+  no_wandb: true
+  norm_order: 1
+  output_config: output/default
+  seed: 0
+  train_split: 0.8
+  val_metric: informer_rmse

@@ -1,0 +1,21 @@
+# pyenv install 3.9
+# pyenv local 3.9
+# python -m venv venv
+# source venv/bin/activate
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.6.0+cu118
+pip
+jupyter
+jupyterlab
+transformers
+timm==0.4.12
+numpy
+matplotlib
+omegaconf
+einops
+opt_einsum
+tqdm
+rich
+wandb
+scipy
+pandas
