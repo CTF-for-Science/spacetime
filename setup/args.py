@@ -11,7 +11,7 @@ def initialize_args():
     parser.add_argument('--encoder_config', type=str, default='encoder/default')
     parser.add_argument('--decoder_config', type=str, default='decoder/default')
     parser.add_argument('--output_config', type=str, default='output/default')
-    parser.add_argument('--device', type=str, default='cuda:1')
+    parser.add_argument('--device', type=str, default='cuda:0')
     
     # Model config arguments
     parser.add_argument('--n_blocks', type=int, default=None)  # Only update encoder blocks
