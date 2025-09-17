@@ -1,7 +1,7 @@
 dataset:
-  name: KS_Official
+  name: seismo
   pair_id:
-  - 6
+  - 8
 hyperparameters:
   dropout:
     choices:
@@ -39,7 +39,7 @@ hyperparameters:
     - 0.0001
     type: choice
 model:
-  batch_size: 5
+  batch_size: 128
   criterion_weights:
   - 1
   - 1

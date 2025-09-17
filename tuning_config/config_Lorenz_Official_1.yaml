@@ -11,7 +11,7 @@ hyperparameters:
   horizon:
     lower_bound: 32
     type: randint
-    upper_bound: 256
+    upper_bound: 512
   kernel_dim:
     choices:
     - 32
@@ -21,7 +21,7 @@ hyperparameters:
   lag:
     lower_bound: 32
     type: randint
-    upper_bound: 256
+    upper_bound: 512
   lr:
     lower_bound: 1.0e-05
     type: loguniform
@@ -39,7 +39,7 @@ hyperparameters:
     - 0.0001
     type: choice
 model:
-  batch_size: 16
+  batch_size: 128
   criterion_weights:
   - 1
   - 1
@@ -52,6 +52,7 @@ model:
   loss: informer_rmse
   max_epochs: 50
   mlp_n_layers: 1
+  n_trials: 50
   name: spacetime
   no_wandb: true
   norm_order: 1

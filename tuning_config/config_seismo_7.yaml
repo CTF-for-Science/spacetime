@@ -1,7 +1,7 @@
 dataset:
-  name: KS_Official
+  name: seismo
   pair_id:
-  - 6
+  - 7
 hyperparameters:
   dropout:
     choices:

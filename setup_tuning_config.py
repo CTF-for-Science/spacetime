@@ -6,11 +6,12 @@ with open(config_path, 'r') as f:
     hp_config = yaml.safe_load(f)
 print(hp_config)
 
-for dataset in ['Lorenz_Official', "KS_Official"]:
+for dataset in ['Lorenz_Official', "KS_Official", "seismo"]:
     for pair_id in range(1,9+1):
 
         # Fill data
         hp_config['dataset']['name'] = dataset
+        hp_config['model']['name'] = 'spacetime'
         hp_config['dataset']['pair_id'] = [pair_id]
         hp_config['hyperparameters']['lr']['lower_bound'] = 0.00001
         hp_config['hyperparameters']['lr']['upper_bound'] = 0.01
@@ -34,11 +35,11 @@ for dataset in ['Lorenz_Official', "KS_Official"]:
             hp_config['hyperparameters']['lag']['lower_bound'] = 32
             hp_config['hyperparameters']['horizon']['lower_bound'] = 32
 
-            if dataset in ['ODE_Lorenz', 'Lorenz_Official']:
+            if dataset in ['Lorenz_Official']:
                 hp_config['model']['batch_size'] = 128
                 hp_config['hyperparameters']['lag']['upper_bound'] = 512
                 hp_config['hyperparameters']['horizon']['upper_bound'] = 512
-            else:
+            elif dataset in ['KS_Official', 'seismo']:
                 hp_config['model']['batch_size'] = 16
                 hp_config['hyperparameters']['lag']['upper_bound'] = 256
                 hp_config['hyperparameters']['horizon']['upper_bound'] = 256

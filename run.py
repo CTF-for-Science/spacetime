@@ -14,31 +14,6 @@ from ctf4science.data_module import parse_pair_ids, get_applicable_plots, get_pr
 # file dir
 file_dir = Path(__file__).parent
 
-# Configuration dictionary per dataset
-id_dict_Lorenz = {
-    1: {"train_ids":[1], "test_id": 1, "forecast_id": 1, "forecast_length": 2001, "burn_in": False},
-    2: {"train_ids":[2], "test_id": 2, "reconstruct_id": 2},
-    3: {"train_ids":[2], "test_id": 3, "forecast_id": 2, "forecast_length": 2001, "burn_in": False},
-    4: {"train_ids":[3], "test_id": 4, "reconstruct_id": 3},
-    5: {"train_ids":[3], "test_id": 4, "forecast_id": 3, "forecast_length": 2001, "burn_in": False},
-    6: {"train_ids":[4], "test_id": 6, "forecast_id": 4, "forecast_length": 2001, "burn_in": False},
-    7: {"train_ids":[5], "test_id": 7, "forecast_id": 5, "forecast_length": 2001, "burn_in": False},
-    8: {"train_ids":[6, 7, 8], "test_id": 8, "forecast_id": 9, "forecast_length": 2001, "burn_in": True},
-    9: {"train_ids":[6, 7, 8], "test_id": 9, "forecast_id": 10, "forecast_length": 2001, "burn_in": True},
-}
-
-id_dict_KS = {
-    1: {"train_ids":[1], "test_id": 1, "forecast_id": 1, "forecast_length": 1000, "burn_in": False},
-    2: {"train_ids":[2], "test_id": 2, "reconstruct_id": 2},
-    3: {"train_ids":[2], "test_id": 3, "forecast_id": 2, "forecast_length": 1000, "burn_in": False},
-    4: {"train_ids":[3], "test_id": 4, "reconstruct_id": 3},
-    5: {"train_ids":[3], "test_id": 4, "forecast_id": 3, "forecast_length": 1000, "burn_in": False},
-    6: {"train_ids":[4], "test_id": 6, "forecast_id": 4, "forecast_length": 1000, "burn_in": False},
-    7: {"train_ids":[5], "test_id": 7, "forecast_id": 5, "forecast_length": 1000, "burn_in": False},
-    8: {"train_ids":[6, 7, 8], "test_id": 8, "forecast_id": 9, "forecast_length": 1000, "burn_in": True},
-    9: {"train_ids":[6, 7, 8], "test_id": 9, "forecast_id": 10, "forecast_length": 1000, "burn_in": True},
-}
-
 def main(config_path: str) -> None:
     """
     Main function to run the spacetime model with specified config file.

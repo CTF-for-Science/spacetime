@@ -17,7 +17,6 @@ def initialize_shared_step(config):
 def create_forecast(model, start_mat, 
               config, n_out, input_transform=None, output_transform=None):
     create_forecast = initialize_create_forecast(config)
-    
     forecast_mat = create_forecast(model, start_mat, config, n_out, 
                                         input_transform=input_transform,
                                         output_transform=output_transform)

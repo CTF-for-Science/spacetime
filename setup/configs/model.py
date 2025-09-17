@@ -50,7 +50,6 @@ def update_embedding_config_from_args(config, args):
     else:
         args.n_kernels = args.model_dim // (args.input_dim * args.n_heads)
         config.embedding_config['kwargs']['n_kernels'] = args.n_kernels
-        
     if args.input_dim != 1:
         embedding_dim = (n_heads * head_dim * args.n_kernels)
         config.embedding_config['kwargs']['input_dim'] = args.input_dim

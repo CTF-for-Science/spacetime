@@ -145,7 +145,7 @@ def main():
                         val_metric=args.val_metric, wandb=wandb, 
                         return_best=True, early_stopping_epochs=args.early_stopping_epochs)    
 
-    if experiment_configs['dataset']['_name_'] in ['ODE_Lorenz', 'PDE_KS', 'KS_Official', 'Lorenz_Official']:
+    if experiment_configs['dataset']['_name_'] in ['ODE_Lorenz', 'PDE_KS', 'KS_Official', 'Lorenz_Official', 'seismo']:
         outputs = dict()
         outputs['reconstructions'] = dict()
         outputs['forecasts'] = dict()

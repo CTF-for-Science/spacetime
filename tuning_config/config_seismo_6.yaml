@@ -1,5 +1,5 @@
 dataset:
-  name: KS_Official
+  name: seismo
   pair_id:
   - 6
 hyperparameters:
