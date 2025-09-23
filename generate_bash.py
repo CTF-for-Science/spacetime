@@ -6,7 +6,7 @@ top_dir = Path(__file__).parent
 
 bash_template_0 = \
 """\
-repo="/home/alexey/Git/CTF-for-Science/models/spacetime"
+repo="/home/<USER>/Git/CTF-for-Science/models/spacetime"
 
 # Create logs directory and set up logging
 rm $repo/logs/*
@@ -20,7 +20,7 @@ echo "Running Python"
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
-source /home/alexey/.virtualenvs/spacetime/bin/activate
+source /home/<USER>/.virtualenvs/spacetime/bin/activate
 
 """
 
