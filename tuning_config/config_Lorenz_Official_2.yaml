@@ -52,7 +52,7 @@ model:
   loss: informer_rmse
   max_epochs: 50
   mlp_n_layers: 1
-  n_trials: 50
+  n_trials: 10
   name: spacetime
   no_wandb: true
   norm_order: 1

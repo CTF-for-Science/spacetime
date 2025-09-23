@@ -26,7 +26,7 @@ source /home/alexey/.virtualenvs/spacetime/bin/activate
 
 bash_template_1 = \
 """\
-python optimize_parameters.py --config-path tuning_config/config_{dataset}_{pair_id}.yaml
+python optimize_parameters.py --config-path tuning_config/config_{dataset}_{pair_id}.yaml --time-budget-hours 2.0
 
 """
 
@@ -50,7 +50,7 @@ for file in bash_dir.glob('*.sh'):
     file.unlink()
 
 device_counter = 0
-devices = ["cuda:2"]
+devices = ["cuda:0"]
 total_scripts = len(devices) * n_parallel
 
 # Initialize bash scripts for each device and parallel index
