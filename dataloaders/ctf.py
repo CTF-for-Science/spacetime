@@ -321,6 +321,31 @@ class PDE_KS(CTFSequenceDataset):
         10: "X10train.mat"
     }
 
+class ocean_das(CTFSequenceDataset):
+    _name_ = "ocean_das"
+
+    init_defaults = {
+        "size": None,
+        "scale": True,
+        "inverse": False,
+        "timeenc": 0,
+        "freq": "h",
+        "cols": None,
+    }
+
+    names = {
+        1: "X1train.npz",
+        2: "X2train.npz",
+        3: "X3train.npz",
+        4: "X4train.npz",
+        5: "X5train.npz",
+        6: "X6train.npz",
+        7: "X7train.npz",
+        8: "X8train.npz",
+        9: "X9train.npz",
+        10: "X10train.npz"
+    }
+
 class seismo(CTFSequenceDataset):
     _name_ = "seismo"
 
@@ -378,6 +403,8 @@ def load_data(config_dataset, config_loader):
         dataset = PDE_KS(**config_dataset)
     elif config_dataset['_name_'] in ["seismo"]:
         dataset = seismo(**config_dataset)
+    elif config_dataset['_name_'] in ["ocean_das"]:
+        dataset = ocean_das(**config_dataset)
     dataset._name_ = config_dataset['_name_']
     dataset.setup()
     
