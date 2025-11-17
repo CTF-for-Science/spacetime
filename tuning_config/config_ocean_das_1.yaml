@@ -1,7 +1,7 @@
 dataset:
-  name: seismo
+  name: ocean_das
   pair_id:
-  - 5
+  - 1
 hyperparameters:
   dropout:
     choices:
@@ -52,7 +52,7 @@ model:
   loss: informer_rmse
   max_epochs: 50
   mlp_n_layers: 1
-  n_trials: 10
+  n_trials: 20
   name: spacetime
   no_wandb: true
   norm_order: 1

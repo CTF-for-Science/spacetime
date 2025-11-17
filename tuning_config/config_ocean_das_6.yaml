@@ -1,7 +1,7 @@
 dataset:
-  name: seismo
+  name: ocean_das
   pair_id:
-  - 7
+  - 6
 hyperparameters:
   dropout:
     choices:

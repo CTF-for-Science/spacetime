@@ -1,7 +1,7 @@
 dataset:
-  name: Lorenz_Official
+  name: ocean_das
   pair_id:
-  - 1
+  - 2
 hyperparameters:
   dropout:
     choices:
@@ -11,7 +11,7 @@ hyperparameters:
   horizon:
     lower_bound: 32
     type: randint
-    upper_bound: 512
+    upper_bound: 256
   kernel_dim:
     choices:
     - 32
@@ -21,7 +21,7 @@ hyperparameters:
   lag:
     lower_bound: 32
     type: randint
-    upper_bound: 512
+    upper_bound: 256
   lr:
     lower_bound: 1.0e-05
     type: loguniform
@@ -39,7 +39,7 @@ hyperparameters:
     - 0.0001
     type: choice
 model:
-  batch_size: 128
+  batch_size: 16
   criterion_weights:
   - 1
   - 1
