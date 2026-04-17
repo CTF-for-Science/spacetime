@@ -6,7 +6,7 @@ with open(config_path, 'r') as f:
     hp_config = yaml.safe_load(f)
 print(hp_config)
 
-for dataset in ["ocean_das"]:
+for dataset in ["msfr"]:
     for pair_id in range(1,9+1):
 
         # Fill data
@@ -39,7 +39,7 @@ for dataset in ["ocean_das"]:
                 hp_config['model']['batch_size'] = 128
                 hp_config['hyperparameters']['lag']['upper_bound'] = 512
                 hp_config['hyperparameters']['horizon']['upper_bound'] = 512
-            elif dataset in ['KS_Official', 'seismo', 'ocean_das']:
+            elif dataset in ['KS_Official', 'seismo', 'ocean_das', 'msfr']:
                 hp_config['model']['batch_size'] = 16
                 hp_config['hyperparameters']['lag']['upper_bound'] = 256
                 hp_config['hyperparameters']['horizon']['upper_bound'] = 256

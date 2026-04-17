@@ -145,7 +145,7 @@ def main():
                         val_metric=args.val_metric, wandb=wandb, 
                         return_best=True, early_stopping_epochs=args.early_stopping_epochs)    
 
-    if experiment_configs['dataset']['_name_'] in ['ODE_Lorenz', 'PDE_KS', 'KS_Official', 'Lorenz_Official', 'seismo', 'ocean_das']:
+    if experiment_configs['dataset']['_name_'] in ['ODE_Lorenz', 'PDE_KS', 'KS_Official', 'Lorenz_Official', 'seismo', 'ocean_das', 'msfr']:
         outputs = dict()
         outputs['reconstructions'] = dict()
         outputs['forecasts'] = dict()
@@ -193,7 +193,7 @@ def main():
                 train_mats, _, init_mat = load_validation_dataset(args.dataset, args.pair_id, transpose=True)
                 if args.pair_id in [8,9]:
                     data_mat = init_mat
-                    output_timesteps = get_validation_prediction_timesteps(args.dataset, args.pair_id).shape[0] - lag
+                    output_timesteps = get_validation_prediction_timesteps(args.dataset, args.pair_id).shape[0]
                 else:
                     data_mat = train_mats[0]
                     output_timesteps = get_validation_prediction_timesteps(args.dataset, args.pair_id).shape[0]
@@ -201,7 +201,7 @@ def main():
                 train_mats, init_mat = load_dataset(args.dataset, args.pair_id, transpose=True)
                 if args.pair_id in [8,9]:
                     data_mat = init_mat
-                    output_timesteps = get_prediction_timesteps(args.dataset, args.pair_id).shape[0] - lag
+                    output_timesteps = get_prediction_timesteps(args.dataset, args.pair_id).shape[0]
                 else:
                     data_mat = train_mats[0]
                     output_timesteps = get_prediction_timesteps(args.dataset, args.pair_id).shape[0]
@@ -215,8 +215,6 @@ def main():
                                             output_transform=output_transform)
             # Save output
             output_mat = output_mat.detach().cpu()
-            if args.pair_id in [8,9]:
-                output_mat = torch.cat([data_mat,output_mat])
             output_mat = np.asarray(output_mat).T
 
         # Make tmp output dir

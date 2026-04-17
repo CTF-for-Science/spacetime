@@ -6,7 +6,7 @@ top_dir = Path(__file__).parent
 
 bash_template_0 = \
 """\
-repo="/home/<USER>/Git/CTF-for-Science/models/spacetime"
+repo="/home/alexey/Git/CTF-for-Science/models/spacetime"
 
 # Create logs directory and set up logging
 rm $repo/logs/*
@@ -20,13 +20,13 @@ echo "Running Python"
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
-source /home/<USER>/.virtualenvs/spacetime/bin/activate
+source /home/alexey/.virtualenvs/spacetime_2/bin/activate
 
 """
 
 bash_template_1 = \
 """\
-python optimize_parameters.py --config-path tuning_config/config_{dataset}_{pair_id}.yaml --time-budget-hours 2.0
+python optimize_parameters.py --config-path tuning_config/config_{dataset}_{pair_id}.yaml --time-budget-hours 8.0
 
 """
 
@@ -38,7 +38,7 @@ echo "Finished running Python"
 
 # Parameters
 n_parallel = 1
-datasets = ["seismo"]
+datasets = ["msfr"]
 pair_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation = 0
 recon_ctx = 50
@@ -50,7 +50,7 @@ for file in bash_dir.glob('*.sh'):
     file.unlink()
 
 device_counter = 0
-devices = ["cuda:0"]
+devices = ["cuda:1"]
 total_scripts = len(devices) * n_parallel
 
 # Initialize bash scripts for each device and parallel index
