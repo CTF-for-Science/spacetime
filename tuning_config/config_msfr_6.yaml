@@ -49,6 +49,7 @@ model:
   early_stopping_epochs: 10
   embedding_config: embedding/repeat
   encoder_config: encoder/default_no_skip
+  features: M
   loss: informer_rmse
   max_epochs: 50
   mlp_n_layers: 1

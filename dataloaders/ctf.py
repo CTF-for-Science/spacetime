@@ -22,6 +22,8 @@ class StandardScaler:
     def fit(self, data):
         self.mean = data.mean(0)
         self.std = data.std(0)
+        # Constant columns (e.g. Dirichlet boundary nodes) would divide by zero
+        self.std = np.where(self.std == 0, np.ones_like(self.std), self.std)
 
     def transform(self, data):
         mean = (
@@ -152,7 +154,9 @@ class CTFDataset(Dataset):
     def _borders(self, df_raw):
         num_train = int(len(df_raw)) # 100% of training
         num_vali = len(df_raw) - int(len(df_raw) * 0.8) # 20% of training for validation
-        border1s = [0, num_train - num_vali, 0] # 0% for testing
+        # Short matrices: make the validation window hold at least one (lag + horizon) sample
+        num_vali = max(num_vali, self.seq_len + self.pred_len)
+        border1s = [0, max(0, num_train - num_vali), 0] # 0% for testing
         border2s = [num_train, num_train, 0]
 
         return border1s, border2s
@@ -210,7 +214,8 @@ class CTFDataset(Dataset):
             self.data_stamp.append(np.arange(0,df_data.shape[0]).reshape(-1,1))
 
             data_len = self.data_x[-1].shape[0]
-            self.lens.append(data_len - self.seq_len - self.pred_len + 1)
+            # Matrices shorter than lag + horizon contribute no samples
+            self.lens.append(max(0, data_len - self.seq_len - self.pred_len + 1))
 
             if len(self.start_idxs) == 0:
                 self.start_idxs.append(0)
@@ -346,6 +351,21 @@ class msfr(CTFSequenceDataset):
         10: "X10train.npz"
     }
 
+class CTFNpzDataset(CTFSequenceDataset):
+    """Generic CTF dataset; data is read through ctf4science.data_module, so only
+    the dataset name (set in load_data) matters. Used for names that are not
+    valid Python identifiers (e.g. 'pke-hpmr', 'mhd-2cyls')."""
+    _name_ = "ctf_npz"
+
+    init_defaults = {
+        "size": None,
+        "scale": True,
+        "inverse": False,
+        "timeenc": 0,
+        "freq": "h",
+        "cols": None,
+    }
+
 class ocean_das(CTFSequenceDataset):
     _name_ = "ocean_das"
 
@@ -432,13 +452,19 @@ def load_data(config_dataset, config_loader):
         dataset = ocean_das(**config_dataset)
     elif config_dataset['_name_'] in ["msfr"]:
         dataset = msfr(**config_dataset)
+    elif config_dataset['_name_'] in ["pke-hpmr", "dynasty", "mhd-2cyls"]:
+        dataset = CTFNpzDataset(**config_dataset)
+    else:
+        raise NotImplementedError(f"CTF dataset {config_dataset['_name_']} not implemented")
     dataset._name_ = config_dataset['_name_']
     dataset.setup()
-    
+
     train_loader = dataset.train_dataloader(**config_loader)
     # Eval loaders are dictionaries where key is resolution, value is dataloader
     # - Borrowed from S4 dataloaders. For now just set resolution to 1
-    val_loader   = dataset.val_dataloader(**config_loader)[None]
+    # - Keep partial batches for validation: short-trajectory pairs may have
+    #   fewer validation windows than batch_size
+    val_loader   = dataset.val_dataloader(**{**config_loader, 'drop_last': False})[None]
     test_loader  = dataset.test_dataloader(**config_loader)[None]
     return train_loader, val_loader, test_loader  # , dataset
 

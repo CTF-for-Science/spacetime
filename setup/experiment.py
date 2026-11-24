@@ -64,8 +64,11 @@ def initialize_experiment(args, experiment_name_id='',
     args.best_val_metric   = best_val_metric
     
     checkpoint_dir = join(args.checkpoint_dir, args.dataset_name)
+    if getattr(args, 'pair_id', None) is not None:
+        # Experiment name has no pair_id; keep concurrent per-pair jobs from clobbering checkpoints
+        checkpoint_dir = join(checkpoint_dir, f'pair_{args.pair_id}' + ('_val' if args.validation else ''))
     if not os.path.isdir(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
+        os.makedirs(checkpoint_dir, exist_ok=True)
         print(f'-> Created model checkpoint saving directory at {checkpoint_dir}!')
     args.checkpoint_dir = checkpoint_dir
     

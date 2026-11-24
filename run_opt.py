@@ -1,10 +1,14 @@
 import argparse
 import yaml
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import os
 import torch
 import time
+import shlex
+import shutil
+import tempfile
+import warnings
 import numpy as np
 from ctf4science.data_module import load_validation_dataset, get_validation_prediction_timesteps, parse_pair_ids
 from ctf4science.eval_module import evaluate_custom
@@ -17,6 +21,21 @@ file_dir = Path(__file__).parent
 # Currently just overwriting config file and results file to save space
 # Currently using init_data in hyperparameter optimization
 # Currently not counting init_data in train_split amount
+
+def make_trial_checkpoint_dir(batch_id) -> Optional[Path]:
+    """
+    Create a unique, absolute checkpoint directory for one tuning trial under
+    node-local $TMPDIR (the SSD inside a Slurm job). The caller deletes it when
+    the trial finishes. Returns None (keep main.py's default ./checkpoints on the
+    shared filesystem) with a warning when $TMPDIR is not set.
+    """
+    tmpdir = os.environ.get('TMPDIR')
+    if not tmpdir or not os.path.isdir(tmpdir):
+        warnings.warn("$TMPDIR is not set (or missing); tuning checkpoints will be written to "
+                      "main.py's default ./checkpoints on the shared filesystem.")
+        return None
+    return Path(tempfile.mkdtemp(prefix=f'spacetime_ckpt_{batch_id}_',
+                                 dir=os.path.abspath(tmpdir))).resolve()
 
 def main(config_path: str) -> None:
     """
@@ -54,100 +73,118 @@ def main(config_path: str) -> None:
         'pairs': []
     }
 
-    # Process each sub-dataset
-    for pair_id in pair_ids:
-        # Prepare command
-        cmd = \
-        """\
-        python\
-        {spacetime_main_path}\
-        --batch_id {batch_id}\
-        --dataset {dataset}\
-        --pair_id {pair_id}\
-        --lag {lag}\
-        --horizon {horizon}\
-        --mlp_n_layers {mlp_n_layers}\
-        --embedding_config {embedding_config}\
-        --encoder_config {encoder_config}\
-        --decoder_config {decoder_config}\
-        --output_config {output_config}\
-        --n_blocks {n_blocks}\
-        --kernel_dim {kernel_dim}\
-        --norm_order {norm_order}\
-        --batch_size {batch_size}\
-        --dropout {dropout}\
-        --lr {lr}\
-        --weight_decay {weight_decay}\
-        --max_epochs {max_epochs}\
-        --early_stopping_epochs {early_stopping_epochs}\
-        --data_transform {data_transform}\
-        --loss {loss}\
-        --val_metric {val_metric}\
-        --criterion_weights {criterion_weights}\
-        --seed {seed}\
-        --validation\
-        {no_wandb}\
-        """
+    # Tuning trials checkpoint to node-local $TMPDIR (unique dir per trial, deleted
+    # afterwards) so hyperparameter-named checkpoints don't pile up on /gscratch.
+    trial_ckpt_dir = make_trial_checkpoint_dir(batch_id)
+    try:
+        # Process each sub-dataset
+        for pair_id in pair_ids:
+            # Prepare command
+            cmd = \
+            """\
+            python\
+            {spacetime_main_path}\
+            --batch_id {batch_id}\
+            --dataset {dataset}\
+            --pair_id {pair_id}\
+            --lag {lag}\
+            --horizon {horizon}\
+            --mlp_n_layers {mlp_n_layers}\
+            --embedding_config {embedding_config}\
+            --encoder_config {encoder_config}\
+            --decoder_config {decoder_config}\
+            --output_config {output_config}\
+            --n_blocks {n_blocks}\
+            --kernel_dim {kernel_dim}\
+            --norm_order {norm_order}\
+            --batch_size {batch_size}\
+            --dropout {dropout}\
+            --lr {lr}\
+            --weight_decay {weight_decay}\
+            --max_epochs {max_epochs}\
+            --early_stopping_epochs {early_stopping_epochs}\
+            --data_transform {data_transform}\
+            --loss {loss}\
+            --val_metric {val_metric}\
+            --criterion_weights {criterion_weights}\
+            --seed {seed}\
+            --features {features}\
+            --validation\
+        {checkpoint_dir_arg}\
+            {no_wandb}\
+            """
 
-        cmd_formatted = cmd.format(
-            spacetime_main_path = file_dir / "main.py",
-            batch_id = batch_id,
-            dataset=config['dataset']['name'],
-            pair_id = pair_id,
-            lag=config['model']['lag'],
-            horizon=config['model']['horizon'],
-            mlp_n_layers=config['model']['mlp_n_layers'],
-            embedding_config=config['model']['embedding_config'],
-            encoder_config=config['model']['encoder_config'],
-            decoder_config=config['model']['decoder_config'],
-            output_config=config['model']['output_config'],
-            n_blocks=config['model']['n_blocks'],
-            kernel_dim=config['model']['kernel_dim'],
-            norm_order=config['model']['norm_order'],
-            batch_size=config['model']['batch_size'],
-            dropout=config['model']['dropout'],
-            lr=config['model']['lr'],
-            weight_decay=config['model']['weight_decay'],
-            max_epochs=config['model']['max_epochs'],
-            early_stopping_epochs=config['model']['early_stopping_epochs'],
-            data_transform=config['model']['data_transform'],
-            loss=config['model']['loss'],
-            val_metric=config['model']['val_metric'],
-            criterion_weights=f"{config['model']['criterion_weights'][0]} {config['model']['criterion_weights'][1]} {config['model']['criterion_weights'][2]}",
-            seed=config['model']['seed'],
-            no_wandb="--no_wandb" if config['model']['no_wandb'] else "",
-        )
+            cmd_formatted = cmd.format(
+                spacetime_main_path = file_dir / "main.py",
+                batch_id = batch_id,
+                dataset=config['dataset']['name'],
+                pair_id = pair_id,
+                lag=config['model']['lag'],
+                horizon=config['model']['horizon'],
+                mlp_n_layers=config['model']['mlp_n_layers'],
+                embedding_config=config['model']['embedding_config'],
+                encoder_config=config['model']['encoder_config'],
+                decoder_config=config['model']['decoder_config'],
+                output_config=config['model']['output_config'],
+                n_blocks=config['model']['n_blocks'],
+                kernel_dim=config['model']['kernel_dim'],
+                norm_order=config['model']['norm_order'],
+                batch_size=config['model']['batch_size'],
+                dropout=config['model']['dropout'],
+                lr=config['model']['lr'],
+                weight_decay=config['model']['weight_decay'],
+                max_epochs=config['model']['max_epochs'],
+                early_stopping_epochs=config['model']['early_stopping_epochs'],
+                data_transform=config['model']['data_transform'],
+                loss=config['model']['loss'],
+                val_metric=config['model']['val_metric'],
+                criterion_weights=f"{config['model']['criterion_weights'][0]} {config['model']['criterion_weights'][1]} {config['model']['criterion_weights'][2]}",
+                seed=config['model']['seed'],
+                features=config['model'].get('features', 'S'),  # 'M': one output per state variable
+                no_wandb="--no_wandb" if config['model']['no_wandb'] else "",
+                checkpoint_dir_arg=(f"--checkpoint_dir {shlex.quote(str(trial_ckpt_dir))}"
+                                    if trial_ckpt_dir is not None else ""),
+            )
 
-        # Execute command
-        print("---------------")
-        print("Python running:")
-        print(cmd_formatted)
-        print("---------------")
+            # Execute command
+            print("---------------")
+            print("Python running:")
+            print(cmd_formatted)
+            print("---------------")
 
-        out = os.system(cmd_formatted)
-        time.sleep(1) # to allow for ctrl+c
+            out = os.system(cmd_formatted)
+            time.sleep(1) # to allow for ctrl+c
 
-        print("---------------")
-        print(f"Returned: {out}")
-        print("---------------")
+            # main.py has already reloaded its best checkpoint and written predictions,
+            # so drop this pair's checkpoints now to keep $TMPDIR usage to one pair at a time.
+            if trial_ckpt_dir is not None:
+                for child in trial_ckpt_dir.iterdir():
+                    shutil.rmtree(child, ignore_errors=True)
 
-        if out != 0:
-            raise Exception(f"Output code {out}")
+            print("---------------")
+            print(f"Returned: {out}")
+            print("---------------")
 
-        # Load predictions
-        pred_data = torch.load(file_dir / 'tmp_pred' / f'output_mat_{batch_id}.torch', weights_only=False)
-        pred_data = pred_data.T
+            if out != 0:
+                raise Exception(f"Output code {out}")
 
-        # Evaluate predictions using default metrics
-        _, val_data, _ = load_validation_dataset(dataset_name, pair_id, 0.8)
-        results = evaluate_custom(dataset_name, pair_id, val_data, pred_data)
+            # Load predictions
+            pred_data = torch.load(file_dir / 'tmp_pred' / f'output_mat_{batch_id}.torch', weights_only=False)
+            pred_data = pred_data.T
 
-        # Append metrics to batch results
-        # Convert metric values to plain Python floats for YAML serialization
-        batch_results['pairs'].append({
-            'pair_id': pair_id,
-            'metrics': results
-        })
+            # Evaluate predictions using default metrics
+            _, val_data, _ = load_validation_dataset(dataset_name, pair_id, 0.8)
+            results = evaluate_custom(dataset_name, pair_id, val_data, pred_data)
+
+            # Append metrics to batch results
+            # Convert metric values to plain Python floats for YAML serialization
+            batch_results['pairs'].append({
+                'pair_id': pair_id,
+                'metrics': results
+            })
+    finally:
+        if trial_ckpt_dir is not None:
+            shutil.rmtree(trial_ckpt_dir, ignore_errors=True)
 
     # Save aggregated batch results
     results_file = file_dir / f"results_{batch_id}.yaml"

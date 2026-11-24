@@ -83,6 +83,7 @@ def main(config_path: str) -> None:
         --criterion_weights {criterion_weights}\
         --device {device}\
         --seed {seed}\
+        --features {features}\
         {no_wandb}\
         """
 
@@ -112,6 +113,7 @@ def main(config_path: str) -> None:
             val_metric=config['model']['val_metric'],
             criterion_weights=f"{config['model']['criterion_weights'][0]} {config['model']['criterion_weights'][1]} {config['model']['criterion_weights'][2]}",
             seed=config['model']['seed'],
+            features=config['model'].get('features', 'S'),  # 'M': one output per state variable
             device=config['model']['device'],
             no_wandb="--no_wandb" if config['model']['no_wandb'] else "",
         )

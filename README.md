@@ -21,6 +21,9 @@ Final configuration files after optimization:
 - `python run.py ctf_config/<config file>`
 - `python run.py ctf_config/<config file>`
 
+Dataset notes:
+- mhd-2cyls: embedding width reduced from 128 to 64 to fit 48 GB GPU memory (`embedding/repeat_w64` + `encoder/default_no_skip_w64`; D = 122400 makes the first encoder block 128 * D wide by default).
+
 The original README from the original [repo](https://github.com/HazyResearch/spacetime) is below:
 
 # SpaceTime 🌌⏱️

@@ -1,0 +1,9 @@
+# Narrower repeat embedding: each input channel is copied n_heads * n_kernels = 64 times
+# (default embedding/repeat.yaml: 4 * 32 = 128). Used for very high-D datasets (mhd-2cyls,
+# D = 122400) so the first encoder block (width 64 * D) fits in 48 GB of GPU memory.
+method: repeat
+kwargs:
+  input_dim: 1
+  embedding_dim: null
+  n_heads: 2
+  n_kernels: 32

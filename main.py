@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from os.path import join
 from omegaconf import OmegaConf
 
-from dataloaders import initialize_data_functions, get_evaluation_loaders
+from dataloaders import initialize_data_functions, get_evaluation_loaders, CTF_DATASETS
 from utils.logging import print_header, print_args, print_config
 from optimizer import get_optimizer, get_scheduler
 from loss import get_loss
@@ -145,13 +145,22 @@ def main():
                         val_metric=args.val_metric, wandb=wandb, 
                         return_best=True, early_stopping_epochs=args.early_stopping_epochs)    
 
-    if experiment_configs['dataset']['_name_'] in ['ODE_Lorenz', 'PDE_KS', 'KS_Official', 'Lorenz_Official', 'seismo', 'ocean_das', 'msfr']:
+    if experiment_configs['dataset']['_name_'] in CTF_DATASETS:
         outputs = dict()
         outputs['reconstructions'] = dict()
         outputs['forecasts'] = dict()
 
         lag = experiment_configs['dataset']['size'][0]
         horizon = experiment_configs['dataset']['size'][2]
+
+        # The model is trained on standardized data (dataset scaler), so map the
+        # raw initial conditions into that space and map predictions back.
+        train_dataset = train_loader.dataset
+        scaler = train_dataset.scaler if train_dataset.scale else None
+        def to_model_space(mat):
+            return scaler.transform(mat) if scaler is not None else mat
+        def from_model_space(mat):
+            return scaler.inverse_transform(mat) if scaler is not None else mat
 
         # Generate reconstructions
         if args.pair_id in [2, 4]:
@@ -163,58 +172,61 @@ def main():
                 train_mats, init_data = load_dataset(args.dataset, args.pair_id, transpose=True)
                 output_timesteps = get_prediction_timesteps(args.dataset, args.pair_id).shape[0]
             data_mat = train_mats[0]
-            data_mat = torch.tensor((data_mat.T))
+            data_mat = to_model_space(torch.tensor(np.ascontiguousarray(data_mat.T)))  # (time, space)
             output_mat_full = None
             start_idx = 0
-            while output_mat_full is None or output_mat_full.shape[1] < output_timesteps:
+            while output_mat_full is None or output_mat_full.shape[0] < output_timesteps:
                 data_mat_tmp = data_mat[start_idx*horizon:start_idx*horizon + lag,:]
-                # Generate the rest of the output
+                # Generate the rest of the output (returned matrix starts with the lag context)
                 output_mat = forecast_model(model, start_mat=data_mat_tmp, config=args,
-                                                n_out=horizon, 
+                                                n_out=lag + horizon,
                                                 input_transform=input_transform, 
                                                 output_transform=output_transform)
-                # Save output
-                output_mat = np.asarray(output_mat.detach().cpu()).T
-                data_mat_tmp = np.asarray(data_mat_tmp.squeeze().T)
+                output_mat = output_mat.detach().cpu()
                 if start_idx == 0:
-                    output_mat_full = np.concatenate([data_mat_tmp, output_mat], axis=1)
+                    output_mat_full = output_mat
                 else:
-                    output_mat_full = np.concatenate([output_mat_full, output_mat], axis=1)
+                    output_mat_full = torch.cat([output_mat_full, output_mat[lag:]])
 
                 # Update for next loop
                 start_idx += 1
-            output_mat_full = output_mat_full[:,0:output_timesteps]
-            output_mat = output_mat_full
+            output_mat = from_model_space(output_mat_full[0:output_timesteps])
+            output_mat = np.asarray(output_mat).T
 
         # Generate forecasts
         else:
             # Get input data to initialize spacetime
             if args.validation:
                 train_mats, _, init_mat = load_validation_dataset(args.dataset, args.pair_id, transpose=True)
-                if args.pair_id in [8,9]:
-                    data_mat = init_mat
-                    output_timesteps = get_validation_prediction_timesteps(args.dataset, args.pair_id).shape[0]
-                else:
-                    data_mat = train_mats[0]
-                    output_timesteps = get_validation_prediction_timesteps(args.dataset, args.pair_id).shape[0]
+                output_timesteps = get_validation_prediction_timesteps(args.dataset, args.pair_id).shape[0]
             else:
                 train_mats, init_mat = load_dataset(args.dataset, args.pair_id, transpose=True)
-                if args.pair_id in [8,9]:
-                    data_mat = init_mat
-                    output_timesteps = get_prediction_timesteps(args.dataset, args.pair_id).shape[0]
-                else:
-                    data_mat = train_mats[0]
-                    output_timesteps = get_prediction_timesteps(args.dataset, args.pair_id).shape[0]
+                output_timesteps = get_prediction_timesteps(args.dataset, args.pair_id).shape[0]
+            if args.pair_id in [8,9]:
+                data_mat = init_mat
+            else:
+                data_mat = train_mats[0]
 
-            data_mat = torch.tensor((data_mat.T))
-            data_mat = data_mat[-lag:,:]
-            # Generate the rest of the output
-            output_mat = forecast_model(model, start_mat=data_mat, config=args,
-                                            n_out=output_timesteps, 
+            data_mat = torch.tensor(np.ascontiguousarray(data_mat.T))  # (time, space)
+            if data_mat.shape[0] < lag:
+                raise ValueError(f"lag={lag} exceeds the {data_mat.shape[0]} available initial-condition "
+                                 f"timesteps for {args.dataset} pair {args.pair_id}; reduce lag")
+            # Validation for pairs 8/9: the target matrix includes the burn-in rows
+            # (see ctf4science load_validation_dataset), so emit them verbatim.
+            # Test: the target starts right after the train/burn-in data.
+            if args.validation and args.pair_id in [8, 9]:
+                prefix = data_mat
+            else:
+                prefix = data_mat[:0]
+            n_pred = output_timesteps - prefix.shape[0]
+            context = to_model_space(data_mat[-lag:,:])
+            # forecast_model returns [context; predictions], so drop the lag context rows
+            forecast = forecast_model(model, start_mat=context, config=args,
+                                            n_out=lag + n_pred,
                                             input_transform=input_transform, 
                                             output_transform=output_transform)
-            # Save output
-            output_mat = output_mat.detach().cpu()
+            forecast = from_model_space(forecast.detach().cpu()[lag:])
+            output_mat = torch.cat([prefix.to(forecast.dtype), forecast])
             output_mat = np.asarray(output_mat).T
 
         # Make tmp output dir

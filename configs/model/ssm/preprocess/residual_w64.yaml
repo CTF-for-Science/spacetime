@@ -1,0 +1,17 @@
+# Same as residual.yaml (4 differencing + 4 moving-average kernel types) but repeated
+# kernel_repeat = 8 times instead of 16, so n_kernels * kernel_repeat = 64 matches embedding/repeat_w64.
+method: residual
+kwargs:
+  max_diff_order: 4
+  min_avg_window: 4
+  max_avg_window: 64
+  model_dim: 64
+  n_kernels: 8
+  kernel_dim: 2
+  kernel_repeat: 8
+  n_heads: 1
+  head_dim: 1
+  kernel_weights: null
+  kernel_init: null
+  kernel_train: false
+  skip_connection: false

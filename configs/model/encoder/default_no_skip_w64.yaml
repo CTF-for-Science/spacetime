@@ -1,0 +1,16 @@
+# Same as default_no_skip.yaml, but the first (preprocessing) block is 64 channels wide per
+# input channel instead of 128 (pair with embedding/repeat_w64). Later blocks, the decoder
+# and the output layer keep their 128-dim latent unchanged.
+blocks:
+- input_dim: 64
+  pre_config: 'ssm/preprocess/residual_w64'
+  ssm_config: 'ssm/companion_preprocess_no_skip_w64'
+  mlp_config: 'mlp/default_no_skip'
+  skip_connection: false
+  skip_preprocess: false
+- input_dim: 128
+  pre_config: 'ssm/preprocess/none'
+  ssm_config: 'ssm/companion'
+  mlp_config: 'mlp/default'
+  skip_connection: true
+  skip_preprocess: true

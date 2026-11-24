@@ -1,6 +1,10 @@
 import importlib
 from torch.utils.data import DataLoader
 
+# CTF datasets handled by dataloaders/ctf.py (names must match ctf4science/data/<name>)
+CTF_DATASETS = ['ODE_Lorenz', 'PDE_KS', 'Lorenz_Official', 'KS_Official', 'seismo', 'ocean_das',
+                'msfr', 'pke-hpmr', 'dynasty', 'mhd-2cyls']
+
 
 def initialize_data_functions(args):
     """
@@ -40,7 +44,7 @@ def get_data_module(args):
         print(f'-> dataset: {args.dataset}{args.variant}')
         data_module = args.dataset_type
 
-    elif args.dataset in ['ODE_Lorenz', 'PDE_KS', 'Lorenz_Official', 'KS_Official', 'seismo', 'ocean_das', 'msfr']:
+    elif args.dataset in CTF_DATASETS:
         args.dataset_type = "ctf"
         # args.variant: needs to be matrix ID, like 3 for X3
         print(f'Dataset type: {args.dataset_type}')
